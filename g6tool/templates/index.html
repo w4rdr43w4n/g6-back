@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Teko:wght@700&family=Work+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Teko", sans-serif;
+            font-family: "Work Sans", sans-serif;
+            font-family: "Roboto Mono", monospace;
+            text-align: center;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .lang {
+            line-height: 30px;
+            position: absolute;
+            background-color: rgb(71, 190, 185);
+            color: white;
+            border-bottom: solid 1px white;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .lang-selected {
+            z-index: 1;
+            height: auto;
+        }
+
+        .langs-clicked .lang {
+            position: relative;
+        }
+
+        .suggestion {
+            padding: 20px 0;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .main-heading {
+            font-size: 30px;
+            text-align: center;
+            padding: 20px;
+            color: #160647;
+        }
+
+        .main-input {
+            outline: none;
+            border: 3px solid #333;
+            border-radius: 10px;
+            font-size: 25px;
+            padding: 10px;
+            color: #160647;
+        }
+    </style>
+
+    <body>
+        <h1 class="main-heading">AI Tools</h1>
+        <div>
+            <div
+                class="langs"
+                style="margin-bottom: 5px; min-height: 30px; position: relative"
+            >
+                Loading....
+            </div>
+        </div>
+        <form>
+            <input type="text" name="title" id="title" class="main-input" />
+        </form>
+        <div class="suggestions" style="padding: 25px"></div>
+        <script>
+            let protocol = window.location.protocol;
+            let wsprotocol = protocol == "https:" ? "wss" : "ws";
+            console.log(protocol);
+
+            const ws_url = `${wsprotocol}://${window.location.host}/ws/article/`;
+            console.log(ws_url);
+            let wikisocket = new WebSocket(ws_url);
+            wikisocket.onclose = () => {
+                wikisocket = new WebSocket(ws_url);
+            };
+            const langsDiv = document.querySelector(".langs");
+            const suggestionsDiv = document.querySelector(".suggestions");
+            const titleinput = document.querySelector("[name=title]");
+            const submitfrom = document.forms[0];
+            let userLang = "en";
+
+            // get available langs
+            let langurl = `${protocol}//${window.location.host}/api/v1/tools/langs`;
+            console.log(langurl);
+            fetch(langurl)
+                .then((res) => res.json())
+                .then((langs) => {
+                    langsDiv.innerHTML = "";
+                    for (let langKey in langs) {
+                        let langName = langs[langKey];
+                        let langDiv = document.createElement("div");
+                        langDiv.innerHTML = langName;
+                        langDiv.className = langKey;
+                        langDiv.classList.add("lang");
+                        if (langKey == userLang) {
+                            langDiv.classList.add("lang-selected");
+                        }
+                        langsDiv.appendChild(langDiv);
+                    }
+
+                    // lang div animation
+                    langsDiv.addEventListener("click", (e) => {
+                        langsDiv.classList.toggle("langs-clicked");
+                    });
+                    langsDiv.childNodes.forEach((lang, i, langs) => {
+                        lang.addEventListener("click", (e) => {
+                            if (!e.target.classList.contains("lang-selected")) {
+                                langs.forEach((l) => {
+                                    l.classList.remove("lang-selected");
+                                });
+                                e.target.classList.add("lang-selected");
+                                userLang = e.target.classList.item(0);
+                            }
+                        });
+                    });
+                })
+                .catch((error) => console.error(error));
+
+            // search for articles
+            submitfrom.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const titlevalue = titleinput.value;
+                titleinput.value = "";
+                let disattr = document.createAttribute("disabled");
+                titleinput.setAttributeNode(disattr);
+                console.log(protocol);
+                console.log(window.location.host);
+                fetch(
+                    `${protocol}//${
+                        window.location.host
+                    }/api/v1/tools/wiki-search?title=${titlevalue}&n=${5}&lang=${userLang}`
+                )
+                    .then((res) => res.json())
+                    .then((data) => {
+                        console.log(data);
+                        suggestionsDiv.innerHTML = "";
+                        for (const suggestion of data) {
+                            let sugDiv = document.createElement("div");
+                            let sugTitle = document.createElement("h3");
+                            let sugSummary = document.createElement("p");
+                            sugTitle.innerHTML = suggestion.suggestion;
+                            sugTitle.style = "color:#47beb9;";
+                            sugDiv.className = "suggestion";
+
+                            sugDiv.appendChild(sugTitle);
+                            // sugDiv.appendChild(sugSummary)
+
+                            sugDiv.addEventListener("click", (e) => {
+                                wikisocket.send(
+                                    JSON.stringify({
+                                        action: "rewrite_page",
+                                        properties: {
+                                            page_id: suggestion.suggestion,
+                                            lang: userLang,
+                                        },
+                                    })
+                                );
+                                suggestionsDiv.innerHTML = "";
+                            });
+
+                            suggestionsDiv.appendChild(sugDiv);
+                        }
+                    })
+                    .catch((error) => console.error(error));
+                titleinput.removeAttribute("disabled");
+            });
+
+            // rewrite article
+            wikisocket.onmessage = function (e) {
+                //{
+                //    "type": "content / section",
+                //    "chunk": chunk["choices"][0]["delta"]["content"],
+                //    "status": True,
+                //}
+                let data = JSON.parse(e.data);
+
+                console.log(data);
+
+                if (data.type === "section") {
+                    const sectionHeadEl = document.createElement("h4");
+                    const sectionP = document.createElement("p");
+                    sectionHeadEl.innerHTML = data.chunk;
+                    sectionHeadEl.style =
+                        "margin-top: 20px;margin-bottom: 5px; color:#d1b01c;";
+                    sectionP.style = `   
+        text-align: justify;
+          border-bottom: 1px solid #d1b01c;
+          border-top: 1px solid #d1b01c;
+          padding: 5px 0;
+        `;
+                    suggestionsDiv.appendChild(sectionHeadEl);
+                    suggestionsDiv.appendChild(sectionP);
+                    console.log(data);
+                }
+                if (data.type === "content") {
+                    //suggestionsDiv.innerHTML += data.chunk
+                    console.log(data);
+                    suggestionsDiv.lastChild.innerHTML += data.chunk;
+                } else {
+                    console.log(data);
+                }
+            };
+        </script>
+    </body>
+</html>

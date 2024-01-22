@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Teko:wght@700&family=Work+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap"
+    rel="stylesheet">
+</head>
+<style>
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+
+  }
+
+  body {
+    font-family: 'Teko', sans-serif;
+    font-family: 'Work Sans', sans-serif;
+    font-family: 'Roboto Mono', monospace;
+    text-align: center;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  .lang {
+    line-height: 30px;
+    position: absolute;
+    background-color: rgb(71, 190, 185);
+    color: white;
+    border-bottom: solid 1px white;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .lang-selected {
+    z-index: 1;
+    height: auto;
+  }
+
+  .langs-clicked .lang {
+    position: relative;
+  }
+
+  .suggestion {
+    padding: 20px 0;
+    text-align: center;
+    cursor: pointer;
+
+  }
+
+  .main-heading {
+    font-size: 30px;
+    text-align: center;
+    padding: 20px;
+    color: #160647;
+  }
+
+  .main-input {
+    outline: none;
+    border: 3px solid #333;
+    border-radius: 10px;
+    font-size: 25px;
+    padding: 10px;
+    color: #160647;
+
+  }
+</style>
+
+<body>
+  <h1 class="main-heading">
+    AI Tools
+  </h1>
+  <div>
+    <div class="langs" style="margin-bottom: 5px;min-height: 30px; position:relative;">Loading....</div>
+
+  </div>
+  <form>
+    <input type="text" name="title" id="title" class="main-input">
+  </form>
+  <div class="suggestions" style="padding: 25px;">
+  </div>
+  <script>
+    
+    let wikisse = new EventSource(`tools/event-stream/MissingNo./en`)
+    wikisse.addEventListener("message",(e)=>{console.log(e)})
+    wikisse.onmessage =(e)=>{
+
+        console.log(e)
+    }
+  </script>
+</body>
+
+</html>
